@@ -1,10 +1,6 @@
 use art::*;
 use ipnet::IpNet;
 
-fn ipv4_table<D>() -> ArtRoot<D> {
-    ArtRoot::new(7, [8u8, 4u8, 4u8, 4u8, 4u8, 4u8, 4u8].to_vec(), 32)
-}
-
 fn lookup_assert<D>(top: &ArtRoot<D>, addr: &str, route: &str) {
     let n = top.route_ipv4_lookup(addr);
     let p: IpNet = route.parse().unwrap();
@@ -33,7 +29,7 @@ fn lookup_test<D>(top: &ArtRoot<D>) {
 
 #[test]
 fn ipv4_default_test() {
-    let mut top = ipv4_table();
+    let mut top = ArtRoot::new_ipv4_table();
 
     // Default route
     top.route_ipv4_add("0.0.0.0/0", 0);
@@ -46,7 +42,7 @@ fn ipv4_default_test() {
 
 #[test]
 fn ipv4_lookup_single_test() {
-    let mut top = ipv4_table();
+    let mut top = ArtRoot::new_ipv4_table();
 
     // 10.0.0.0/24
     top.route_ipv4_add("10.0.0.0/24", 24);
@@ -60,7 +56,7 @@ fn ipv4_lookup_single_test() {
 
 #[test]
 fn ipv4_lookup_order_test() {
-    let mut top = ipv4_table();
+    let mut top = ArtRoot::new_ipv4_table();
 
     // 10.0.0.0/{28..32}
     top.route_ipv4_add("10.0.0.0/28", 28);
@@ -74,7 +70,7 @@ fn ipv4_lookup_order_test() {
 
 #[test]
 fn ipv4_lookup_reverse_test() {
-    let mut top = ipv4_table();
+    let mut top = ArtRoot::new_ipv4_table();
 
     // 10.0.0.0/{28..32}
     top.route_ipv4_add("10.0.0.0/32", 32);
@@ -88,7 +84,7 @@ fn ipv4_lookup_reverse_test() {
 
 #[test]
 fn ipv4_lookup_random_test() {
-    let mut top = ipv4_table();
+    let mut top = ArtRoot::new_ipv4_table();
 
     // 10.0.0.0/{28..32}
     top.route_ipv4_add("10.0.0.0/30", 30);
@@ -102,7 +98,7 @@ fn ipv4_lookup_random_test() {
 
 #[test]
 fn ipv4_inter_count() {
-    let mut top = ipv4_table();
+    let mut top = ArtRoot::new_ipv4_table();
 
     top.route_ipv4_add("0.0.0.0/0", 0);
     top.route_ipv4_add("0.0.0.0/1", 1);
@@ -144,7 +140,7 @@ fn ipv4_inter_count() {
 
 #[test]
 fn ipv4_delete_default() {
-    let mut top = ipv4_table();
+    let mut top = ArtRoot::new_ipv4_table();
 
     top.route_ipv4_add("0.0.0.0/0", 0);
     assert_eq!(top.iter().count(), 1);
@@ -155,7 +151,7 @@ fn ipv4_delete_default() {
 
 #[test]
 fn ipv4_delete_table_default() {
-    let mut top = ipv4_table();
+    let mut top = ArtRoot::new_ipv4_table();
 
     top.route_ipv4_add("0.0.0.0/4", 4);
     assert_eq!(top.iter().count(), 1);

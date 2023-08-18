@@ -30,6 +30,14 @@ impl<D> ArtRoot<D> {
         ar
     }
 
+    pub fn new_ipv4_table() -> Self {
+        ArtRoot::new(7, [8u8, 4u8, 4u8, 4u8, 4u8, 4u8, 4u8].to_vec(), 32)
+    }
+
+    pub fn new_ipv6_table() -> Self {
+        ArtRoot::new(32, [4u8; 32].to_vec(), 128)
+    }
+
     pub fn root(&self) -> Rc<ArtTable<D>> {
         self.root.as_ref().unwrap().clone()
     }
