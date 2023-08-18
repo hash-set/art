@@ -57,8 +57,8 @@ impl<D> ArtRoot<D> {
                 }
                 ArtEntry::Node(node) => {
                     let table = ArtTable::new(self, Some(at.clone()), j);
-                    table.set_default(ArtEntry::as_node(node.clone()));
-                    at.set_entry(j, ArtEntry::as_table(table.clone()));
+                    table.set_default(ArtEntry::from_node(node.clone()));
+                    at.set_entry(j, ArtEntry::from_table(table.clone()));
                     at = table.clone();
                 }
                 ArtEntry::None => {
@@ -355,10 +355,11 @@ impl<D> Iterator for ArtIter<D> {
             let entry = self.at.get_entry(self.i as u32);
             match entry.as_ref() {
                 ArtEntry::Node(node) => {
-                    let j = art_bindex(&self.at, &node.prefix, node.prefix.prefix_len()).unwrap();
-                    if self.i == j as usize {
-                        self.i += 1;
-                        return Some(node.clone());
+                    if let Some(j) = art_bindex(&self.at, &node.prefix, node.prefix.prefix_len()) {
+                        if self.i == j as usize {
+                            self.i += 1;
+                            return Some(node.clone());
+                        }
                     }
                 }
                 ArtEntry::Table(table) => {
@@ -407,11 +408,11 @@ impl<D> ArtEntry<D> {
         Rc::new(ArtEntry::None)
     }
 
-    pub fn as_node(node: Rc<ArtNode<D>>) -> Rc<ArtEntry<D>> {
+    pub fn from_node(node: Rc<ArtNode<D>>) -> Rc<ArtEntry<D>> {
         Rc::new(ArtEntry::Node(node))
     }
 
-    pub fn as_table(node: Rc<ArtTable<D>>) -> Rc<ArtEntry<D>> {
+    pub fn from_table(node: Rc<ArtTable<D>>) -> Rc<ArtEntry<D>> {
         Rc::new(ArtEntry::Table(node))
     }
 

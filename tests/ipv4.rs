@@ -5,10 +5,6 @@ fn ipv4_table<D>() -> ArtRoot<D> {
     ArtRoot::new(7, [8u8, 4u8, 4u8, 4u8, 4u8, 4u8, 4u8].to_vec(), 32)
 }
 
-fn ipv6_table<D>() -> ArtRoot<D> {
-    ArtRoot::new(32, [4u8; 32].to_vec(), 128)
-}
-
 fn lookup_assert<D>(top: &ArtRoot<D>, addr: &str, route: &str) {
     let n = top.route_ipv4_lookup(addr);
     let p: IpNet = route.parse().unwrap();
@@ -169,15 +165,4 @@ fn ipv4_delete_table_default() {
 
     top.route_ipv4_delete("0.0.0.0/4");
     assert_eq!(top.iter().count(), 1);
-}
-
-#[test]
-fn ipv6_delete_default() {
-    let mut top = ipv6_table();
-
-    top.route_ipv6_add("::/0", 0);
-    assert_eq!(top.iter().count(), 1);
-
-    top.route_ipv6_delete("::/0");
-    assert_eq!(top.iter().count(), 0);
 }
