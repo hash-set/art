@@ -1,0 +1,9 @@
+[package]
+name = "art"
+version = "1.0.0"
+authors = ["Kunihiro Ishiguro <kunihiro@zebra.dev"]
+license = "MIT"
+edition = "2021"
+
+[dependencies]
+ipnet = "2.8.0"
