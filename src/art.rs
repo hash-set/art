@@ -31,7 +31,8 @@ impl<D> ArtRoot<D> {
     }
 
     pub fn new_ipv4_table() -> Self {
-        ArtRoot::new(7, [8u8, 4u8, 4u8, 4u8, 4u8, 4u8, 4u8].to_vec(), 32)
+        // ArtRoot::new(7, [8u8, 4u8, 4u8, 4u8, 4u8, 4u8, 4u8].to_vec(), 32)
+        ArtRoot::new(8, [4u8; 8].to_vec(), 32)
     }
 
     pub fn new_ipv6_table() -> Self {
@@ -360,6 +361,7 @@ impl<D> Iterator for ArtIter<D> {
 
     fn next(&mut self) -> Option<Self::Item> {
         while self.i < (self.at.minfringe << 1) as usize {
+            println!("level:{}:i:{}", self.at.level, self.i);
             let entry = self.at.get_entry(self.i as u32);
             match entry.as_ref() {
                 ArtEntry::Node(node) => {
@@ -371,7 +373,9 @@ impl<D> Iterator for ArtIter<D> {
                     }
                 }
                 ArtEntry::Table(table) => {
+                    println!("Table from {}", self.at.level);
                     self.at = table.clone();
+                    println!("Table to {}", self.at.level);
                     self.i = 1;
                     return self.next();
                 }

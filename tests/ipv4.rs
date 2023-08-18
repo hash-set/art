@@ -97,7 +97,7 @@ fn ipv4_lookup_random_test() {
 }
 
 #[test]
-fn ipv4_inter_count() {
+fn ipv4_iter_count() {
     let mut top = ArtRoot::new_ipv4_table();
 
     top.route_ipv4_add("0.0.0.0/0", 0);
@@ -136,6 +136,83 @@ fn ipv4_inter_count() {
     top.route_ipv4_add("240.0.0.0/4", 4);
 
     assert_eq!(top.iter().count(), 31);
+}
+
+#[test]
+fn ipv4_iter_count_delete() {
+    let mut top = ArtRoot::new_ipv4_table();
+
+    top.route_ipv4_add("0.0.0.0/0", 0);
+    top.route_ipv4_add("0.0.0.0/1", 1);
+    top.route_ipv4_add("128.0.0.0/1", 1);
+
+    top.route_ipv4_add("0.0.0.0/2", 2);
+    top.route_ipv4_add("64.0.0.0/2", 2);
+    top.route_ipv4_add("128.0.0.0/2", 2);
+    top.route_ipv4_add("192.0.0.0/2", 2);
+
+    top.route_ipv4_add("0.0.0.0/3", 3);
+    top.route_ipv4_add("32.0.0.0/3", 3);
+    top.route_ipv4_add("64.0.0.0/3", 3);
+    top.route_ipv4_add("96.0.0.0/3", 3);
+    top.route_ipv4_add("128.0.0.0/3", 3);
+    top.route_ipv4_add("160.0.0.0/3", 3);
+    top.route_ipv4_add("192.0.0.0/3", 3);
+    top.route_ipv4_add("224.0.0.0/3", 3);
+
+    top.route_ipv4_add("0.0.0.0/4", 4);
+    top.route_ipv4_add("32.0.0.0/4", 4);
+    top.route_ipv4_add("64.0.0.0/4", 4);
+    top.route_ipv4_add("96.0.0.0/4", 4);
+    top.route_ipv4_add("128.0.0.0/4", 4);
+    top.route_ipv4_add("160.0.0.0/4", 4);
+    top.route_ipv4_add("192.0.0.0/4", 4);
+    top.route_ipv4_add("224.0.0.0/4", 4);
+    top.route_ipv4_add("16.0.0.0/4", 4);
+    top.route_ipv4_add("48.0.0.0/4", 4);
+    top.route_ipv4_add("89.0.0.0/4", 4);
+    top.route_ipv4_add("112.0.0.0/4", 4);
+    top.route_ipv4_add("144.0.0.0/4", 4);
+    top.route_ipv4_add("176.0.0.0/4", 4);
+    top.route_ipv4_add("208.0.0.0/4", 4);
+    top.route_ipv4_add("240.0.0.0/4", 4);
+
+    top.route_ipv4_delete("0.0.0.0/0");
+    top.route_ipv4_delete("0.0.0.0/1");
+    top.route_ipv4_delete("128.0.0.0/1");
+
+    top.route_ipv4_delete("0.0.0.0/2");
+    top.route_ipv4_delete("64.0.0.0/2");
+    top.route_ipv4_delete("128.0.0.0/2");
+    top.route_ipv4_delete("192.0.0.0/2");
+
+    top.route_ipv4_delete("0.0.0.0/3");
+    top.route_ipv4_delete("32.0.0.0/3");
+    top.route_ipv4_delete("64.0.0.0/3");
+    top.route_ipv4_delete("96.0.0.0/3");
+    top.route_ipv4_delete("128.0.0.0/3");
+    top.route_ipv4_delete("160.0.0.0/3");
+    top.route_ipv4_delete("192.0.0.0/3");
+    top.route_ipv4_delete("224.0.0.0/3");
+
+    top.route_ipv4_delete("0.0.0.0/4");
+    top.route_ipv4_delete("32.0.0.0/4");
+    top.route_ipv4_delete("64.0.0.0/4");
+    top.route_ipv4_delete("96.0.0.0/4");
+    top.route_ipv4_delete("128.0.0.0/4");
+    top.route_ipv4_delete("160.0.0.0/4");
+    top.route_ipv4_delete("192.0.0.0/4");
+    top.route_ipv4_delete("224.0.0.0/4");
+    top.route_ipv4_delete("16.0.0.0/4");
+    top.route_ipv4_delete("48.0.0.0/4");
+    top.route_ipv4_delete("89.0.0.0/4");
+    top.route_ipv4_delete("112.0.0.0/4");
+    top.route_ipv4_delete("144.0.0.0/4");
+    top.route_ipv4_delete("176.0.0.0/4");
+    top.route_ipv4_delete("208.0.0.0/4");
+    top.route_ipv4_delete("240.0.0.0/4");
+
+    assert_eq!(top.iter().count(), 0);
 }
 
 #[test]
