@@ -31,8 +31,7 @@ impl<D> ArtRoot<D> {
     }
 
     pub fn new_ipv4_table() -> Self {
-        // ArtRoot::new(7, [8u8, 4u8, 4u8, 4u8, 4u8, 4u8, 4u8].to_vec(), 32)
-        ArtRoot::new(8, [4u8; 8].to_vec(), 32)
+        ArtRoot::new(7, [8u8, 4u8, 4u8, 4u8, 4u8, 4u8, 4u8].to_vec(), 32)
     }
 
     pub fn new_ipv6_table() -> Self {
