@@ -215,11 +215,17 @@ impl<D> ArtRoot<D> {
         let i = art_bindex(&at, prefix, prefix.prefix_len()).unwrap();
         let mut prev = at.get_entry(i);
 
+        let next = if (i >> 1) > 1 {
+            at.get_entry(i >> 1)
+        } else {
+            ArtEntry::none()
+        };
+
         if i < at.minfringe {
             if let ArtEntry::Table(table) = prev.as_ref() {
                 prev = table.get_default();
             }
-            art_allot(&at, i, prev, &ArtEntry::none());
+            art_allot(&at, i, prev, &next);
         } else {
             match prev.as_ref() {
                 ArtEntry::Table(table) => {
@@ -361,7 +367,6 @@ impl<D> Iterator for ArtIter<D> {
 
     fn next(&mut self) -> Option<Self::Item> {
         while self.i < (self.at.minfringe << 1) as usize {
-            println!("level:{}:i:{}", self.at.level, self.i);
             let entry = self.at.get_entry(self.i as u32);
             match entry.as_ref() {
                 ArtEntry::Node(node) => {
@@ -373,9 +378,7 @@ impl<D> Iterator for ArtIter<D> {
                     }
                 }
                 ArtEntry::Table(table) => {
-                    println!("Table from {}", self.at.level);
                     self.at = table.clone();
-                    println!("Table to {}", self.at.level);
                     self.i = 1;
                     return self.next();
                 }
