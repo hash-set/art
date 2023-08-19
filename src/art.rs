@@ -289,7 +289,7 @@ impl<D> ArtRoot<D> {
 
 pub struct ArtTable<D> {
     minfringe: u32,
-    pub level: u32,
+    level: u32,
     index: u32,
     bits: u8,
     offset: u8,
