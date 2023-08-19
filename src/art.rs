@@ -366,30 +366,36 @@ impl<D> Iterator for ArtIter<D> {
     type Item = Rc<ArtNode<D>>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        while self.i < (self.at.minfringe << 1) as usize {
-            let entry = self.at.get_entry(self.i as u32);
-            match entry.as_ref() {
-                ArtEntry::Node(node) => {
-                    if let Some(j) = art_bindex(&self.at, &node.prefix, node.prefix.prefix_len()) {
-                        if self.i == j as usize {
-                            self.i += 1;
-                            return Some(node.clone());
+        loop {
+            while self.i < (self.at.minfringe << 1) as usize {
+                let entry = self.at.get_entry(self.i as u32);
+                match entry.as_ref() {
+                    ArtEntry::Node(node) => {
+                        if let Some(j) =
+                            art_bindex(&self.at, &node.prefix, node.prefix.prefix_len())
+                        {
+                            if self.i == j as usize {
+                                self.i += 1;
+                                return Some(node.clone());
+                            }
                         }
+                        self.i += 1;
+                    }
+                    ArtEntry::Table(table) => {
+                        self.at = table.clone();
+                        self.i = 1;
+                    }
+                    ArtEntry::None => {
+                        self.i += 1;
                     }
                 }
-                ArtEntry::Table(table) => {
-                    self.at = table.clone();
-                    self.i = 1;
-                    return self.next();
-                }
-                _ => {}
             }
-            self.i += 1;
-        }
-        if let Some(parent) = &self.at.parent {
-            self.i = (self.at.index + 1) as usize;
-            self.at = parent.clone();
-            return self.next();
+            if let Some(parent) = &self.at.parent {
+                self.i = (self.at.index + 1) as usize;
+                self.at = parent.clone();
+            } else {
+                break;
+            }
         }
         None
     }
