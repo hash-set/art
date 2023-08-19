@@ -2,7 +2,6 @@ use ipnet::IpNet;
 use std::cell::RefCell;
 use std::rc::Rc;
 
-#[derive(Default)]
 pub struct ArtRoot<D> {
     bits: Vec<u8>,
     levels: u32,
@@ -288,7 +287,6 @@ impl<D> ArtRoot<D> {
     }
 }
 
-#[derive(Default)]
 pub struct ArtTable<D> {
     minfringe: u32,
     pub level: u32,
@@ -400,7 +398,6 @@ impl<D> Iterator for ArtIter<D> {
     }
 }
 
-#[derive(Debug)]
 pub struct ArtNode<D> {
     pub prefix: IpNet,
     pub data: Option<D>,
@@ -415,11 +412,9 @@ impl<D> ArtNode<D> {
     }
 }
 
-#[derive(Default)]
 pub enum ArtEntry<D> {
     Table(Rc<ArtTable<D>>),
     Node(Rc<ArtNode<D>>),
-    #[default]
     None,
 }
 
