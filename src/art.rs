@@ -1,15 +1,37 @@
-use ipnet::IpNet;
+use ipnet::Ipv4Net;
 use std::cell::RefCell;
 use std::rc::Rc;
 
-pub struct ArtRoot<D> {
+pub struct ArtRoot<P, D> {
     bits: Vec<u8>,
     levels: u32,
     alen: u8,
-    root: Option<Rc<ArtTable<D>>>,
+    root: Option<Rc<ArtTable<P, D>>>,
 }
 
-impl<D> ArtRoot<D> {
+pub trait Prefix {
+    // fn to_masked(&self) -> Self;
+    // fn contains(&self, prefix: &Self) -> bool;
+    // fn bit_at(&self, index: u8) -> u8;
+    // fn from_common(prefix1: &Self, prefix2: &Self) -> Self;
+    fn to_octets(&self) -> Vec<u8>;
+    fn prefix_len(&self) -> u8;
+}
+
+impl Prefix for Ipv4Net {
+    fn prefix_len(&self) -> u8 {
+        self.prefix_len()
+    }
+
+    fn to_octets(&self) -> Vec<u8> {
+        self.addr().octets().to_vec()
+    }
+}
+
+impl<P, D> ArtRoot<P, D>
+where
+    P: Prefix + Copy,
+{
     pub fn new(levels: u32, bits: Vec<u8>, alen: u8) -> Self {
         let mut ar = ArtRoot {
             levels,
@@ -37,11 +59,11 @@ impl<D> ArtRoot<D> {
         ArtRoot::new(32, [4u8; 32].to_vec(), 128)
     }
 
-    pub fn root(&self) -> Rc<ArtTable<D>> {
+    pub fn root(&self) -> Rc<ArtTable<P, D>> {
         self.root.as_ref().unwrap().clone()
     }
 
-    pub fn insert(&mut self, an: &Rc<ArtEntry<D>>, prefix: &IpNet) {
+    pub fn insert(&mut self, an: &Rc<ArtEntry<P, D>>, prefix: &P) {
         if prefix.prefix_len() > self.alen {
             return;
         }
@@ -81,7 +103,7 @@ impl<D> ArtRoot<D> {
         self.table_insert(&at, i, an.clone());
     }
 
-    fn table_insert(&mut self, at: &ArtTable<D>, i: u32, an: Rc<ArtEntry<D>>) {
+    fn table_insert(&mut self, at: &ArtTable<P, D>, i: u32, an: Rc<ArtEntry<P, D>>) {
         let mut prev = at.get_entry(i);
 
         if ArtEntry::check_duplicate(&prev, &an) {
@@ -103,7 +125,7 @@ impl<D> ArtRoot<D> {
         }
     }
 
-    pub fn lookup(&self, prefix: &IpNet) -> Option<Rc<ArtNode<D>>> {
+    pub fn lookup(&self, prefix: &P) -> Option<Rc<ArtNode<P, D>>> {
         let mut at = self.root();
         let mut default = at.get_default();
 
@@ -151,7 +173,7 @@ impl<D> ArtRoot<D> {
         None
     }
 
-    pub fn lookup_exact(&self, prefix: &IpNet) -> Option<Rc<ArtNode<D>>> {
+    pub fn lookup_exact(&self, prefix: &P) -> Option<Rc<ArtNode<P, D>>> {
         let mut at = self.root();
 
         while prefix.prefix_len() > at.offset + at.bits {
@@ -189,7 +211,7 @@ impl<D> ArtRoot<D> {
         None
     }
 
-    pub fn delete(&mut self, prefix: &IpNet) {
+    pub fn delete(&mut self, prefix: &P) {
         if prefix.prefix_len() > self.alen {
             return;
         }
@@ -239,15 +261,15 @@ impl<D> ArtRoot<D> {
         }
     }
 
-    pub fn iter(&self) -> ArtIter<D> {
+    pub fn iter(&self) -> ArtIter<P, D> {
         ArtIter {
             i: 1,
             at: self.root(),
         }
     }
 
-    pub fn route_ipv4_add(&mut self, str: &str, data: D) {
-        let prefix: IpNet = str.parse().unwrap();
+    pub fn route_ipv4_add(&mut self, prefix: P, data: D) {
+        // let prefix: P = str.parse().unwrap();
         let node = Rc::new(ArtEntry::Node(Rc::new(ArtNode {
             data: Some(data),
             prefix,
@@ -255,50 +277,47 @@ impl<D> ArtRoot<D> {
         self.insert(&node, &prefix);
     }
 
-    pub fn route_ipv4_delete(&mut self, str: &str) {
-        let prefix: IpNet = str.parse().unwrap();
+    pub fn route_ipv4_delete(&mut self, prefix: P) {
         self.delete(&prefix);
     }
 
-    pub fn route_ipv4_lookup(&self, str: &str) -> Option<Rc<ArtNode<D>>> {
-        let prefix: IpNet = str.parse().unwrap();
+    pub fn route_ipv4_lookup(&self, prefix: P) -> Option<Rc<ArtNode<P, D>>> {
         self.lookup(&prefix)
     }
 
-    pub fn route_ipv4_lookup_exact(&self, str: &str) -> Option<Rc<ArtNode<D>>> {
-        let prefix: IpNet = str.parse().unwrap();
+    pub fn route_ipv4_lookup_exact(&self, prefix: P) -> Option<Rc<ArtNode<P, D>>> {
         self.lookup_exact(&prefix)
     }
 
-    pub fn route_ipv6_add(&mut self, str: &str, data: D) {
-        self.route_ipv4_add(str, data);
-    }
+    // pub fn route_ipv6_add(&mut self, str: &str, data: D) {
+    //     self.route_ipv4_add(str, data);
+    // }
 
-    pub fn route_ipv6_delete(&mut self, str: &str) {
-        self.route_ipv4_delete(str);
-    }
+    // pub fn route_ipv6_delete(&mut self, str: &str) {
+    //     self.route_ipv4_delete(str);
+    // }
 
-    pub fn route_ipv6_lookup(&self, str: &str) -> Option<Rc<ArtNode<D>>> {
-        self.route_ipv4_lookup(str)
-    }
+    // pub fn route_ipv6_lookup(&self, str: &str) -> Option<Rc<ArtNode<P, D>>> {
+    //     self.route_ipv4_lookup(str)
+    // }
 
-    pub fn route_ipv6_lookup_exact(&self, str: &str) -> Option<Rc<ArtNode<D>>> {
-        self.route_ipv4_lookup_exact(str)
-    }
+    // pub fn route_ipv6_lookup_exact(&self, str: &str) -> Option<Rc<ArtNode<P, D>>> {
+    //     self.route_ipv4_lookup_exact(str)
+    // }
 }
 
-pub struct ArtTable<D> {
+pub struct ArtTable<P, D> {
     minfringe: u32,
     level: u32,
     index: u32,
     bits: u8,
     offset: u8,
-    parent: Option<Rc<ArtTable<D>>>,
-    entry: Vec<RefCell<Rc<ArtEntry<D>>>>,
+    parent: Option<Rc<ArtTable<P, D>>>,
+    entry: Vec<RefCell<Rc<ArtEntry<P, D>>>>,
 }
 
-impl<D> ArtTable<D> {
-    fn new(root: &ArtRoot<D>, parent: Option<Rc<ArtTable<D>>>, j: u32) -> Rc<Self> {
+impl<P, D> ArtTable<P, D> {
+    fn new(root: &ArtRoot<P, D>, parent: Option<Rc<ArtTable<P, D>>>, j: u32) -> Rc<Self> {
         let mut table = ArtTable {
             minfringe: 0,
             level: 0,
@@ -321,11 +340,11 @@ impl<D> ArtTable<D> {
         Rc::new(table)
     }
 
-    pub fn get_entry(&self, i: u32) -> Rc<ArtEntry<D>> {
+    pub fn get_entry(&self, i: u32) -> Rc<ArtEntry<P, D>> {
         self.entry[i as usize].borrow().clone()
     }
 
-    fn set_entry(&self, i: u32, an: Rc<ArtEntry<D>>) {
+    fn set_entry(&self, i: u32, an: Rc<ArtEntry<P, D>>) {
         self.entry[i as usize].replace(an);
     }
 
@@ -333,23 +352,26 @@ impl<D> ArtTable<D> {
         matches!(self.entry[1].borrow().as_ref(), ArtEntry::Node(_))
     }
 
-    fn get_default(&self) -> Rc<ArtEntry<D>> {
+    fn get_default(&self) -> Rc<ArtEntry<P, D>> {
         self.entry[1].borrow().clone()
     }
 
-    fn set_default(&self, an: Rc<ArtEntry<D>>) {
+    fn set_default(&self, an: Rc<ArtEntry<P, D>>) {
         self.entry[1].replace(an);
     }
 }
 
-pub struct ArtIter<D> {
-    at: Rc<ArtTable<D>>,
+pub struct ArtIter<P, D> {
+    at: Rc<ArtTable<P, D>>,
     i: usize,
 }
 
-impl<D> IntoIterator for &ArtRoot<D> {
-    type Item = Rc<ArtNode<D>>;
-    type IntoIter = ArtIter<D>;
+impl<P, D> IntoIterator for &ArtRoot<P, D>
+where
+    P: Prefix + Copy,
+{
+    type Item = Rc<ArtNode<P, D>>;
+    type IntoIter = ArtIter<P, D>;
 
     fn into_iter(self) -> Self::IntoIter {
         ArtIter {
@@ -359,8 +381,11 @@ impl<D> IntoIterator for &ArtRoot<D> {
     }
 }
 
-impl<D> Iterator for ArtIter<D> {
-    type Item = Rc<ArtNode<D>>;
+impl<P, D> Iterator for ArtIter<P, D>
+where
+    P: Prefix + Copy,
+{
+    type Item = Rc<ArtNode<P, D>>;
 
     fn next(&mut self) -> Option<Self::Item> {
         loop {
@@ -398,13 +423,16 @@ impl<D> Iterator for ArtIter<D> {
     }
 }
 
-pub struct ArtNode<D> {
-    pub prefix: IpNet,
+pub struct ArtNode<P, D> {
+    pub prefix: P,
     pub data: Option<D>,
 }
 
-impl<D> ArtNode<D> {
-    pub fn new(prefix: &IpNet, data: Option<D>) -> Rc<Self> {
+impl<P, D> ArtNode<P, D>
+where
+    P: Prefix + Copy,
+{
+    pub fn new(prefix: &P, data: Option<D>) -> Rc<Self> {
         Rc::new(Self {
             prefix: *prefix,
             data,
@@ -412,36 +440,36 @@ impl<D> ArtNode<D> {
     }
 }
 
-pub enum ArtEntry<D> {
-    Table(Rc<ArtTable<D>>),
-    Node(Rc<ArtNode<D>>),
+pub enum ArtEntry<P, D> {
+    Table(Rc<ArtTable<P, D>>),
+    Node(Rc<ArtNode<P, D>>),
     None,
 }
 
-impl<D> ArtEntry<D> {
-    fn none() -> Rc<ArtEntry<D>> {
+impl<P, D> ArtEntry<P, D> {
+    fn none() -> Rc<ArtEntry<P, D>> {
         Rc::new(ArtEntry::None)
     }
 
-    pub fn from_node(node: Rc<ArtNode<D>>) -> Rc<ArtEntry<D>> {
+    pub fn from_node(node: Rc<ArtNode<P, D>>) -> Rc<ArtEntry<P, D>> {
         Rc::new(ArtEntry::Node(node))
     }
 
-    pub fn from_table(node: Rc<ArtTable<D>>) -> Rc<ArtEntry<D>> {
+    pub fn from_table(node: Rc<ArtTable<P, D>>) -> Rc<ArtEntry<P, D>> {
         Rc::new(ArtEntry::Table(node))
     }
 
-    fn check_duplicate(old: &Rc<ArtEntry<D>>, new: &Rc<ArtEntry<D>>) -> bool {
+    fn check_duplicate(old: &Rc<ArtEntry<P, D>>, new: &Rc<ArtEntry<P, D>>) -> bool {
         std::ptr::eq(old.as_ref(), new.as_ref())
     }
 }
 
-pub fn to_octets(ipnet: &IpNet) -> Vec<u8> {
-    match ipnet {
-        IpNet::V4(v4net) => v4net.addr().octets().to_vec(),
-        IpNet::V6(v6net) => v6net.addr().octets().to_vec(),
-    }
-}
+// pub fn to_octets(ipnet: &IpNet) -> Vec<u8> {
+//     match ipnet {
+//         IpNet::V4(v4net) => v4net.addr().octets().to_vec(),
+//         IpNet::V6(v6net) => v6net.addr().octets().to_vec(),
+//     }
+// }
 
 // Return the base index of the part of ``addr'' and ``plen''
 // corresponding to the range covered by the table ``at''.
@@ -454,7 +482,10 @@ pub fn to_octets(ipnet: &IpNet) -> Vec<u8> {
 // 8bit-long tables, there's a maximum of 4 base indexes if the
 // prefix length is > 24.
 //
-fn art_bindex<D>(at: &ArtTable<D>, prefix: &IpNet, mut plen: u8) -> Option<u32> {
+fn art_bindex<P, D>(at: &ArtTable<P, D>, prefix: &P, mut plen: u8) -> Option<u32>
+where
+    P: Prefix + Copy,
+{
     let mut k: u32;
     //let mut plen = prefix.prefix_len();
 
@@ -468,7 +499,7 @@ fn art_bindex<D>(at: &ArtTable<D>, prefix: &IpNet, mut plen: u8) -> Option<u32> 
 
     // Jump to the first byte of the address containing bits
     // covered by this table.
-    let addr = to_octets(prefix);
+    let addr = prefix.to_octets();
     let offset: usize = (at.offset / 8) as usize;
 
     // ``at'' covers the bit range between ``boff'' & ``bend''. */
@@ -494,11 +525,14 @@ fn art_bindex<D>(at: &ArtTable<D>, prefix: &IpNet, mut plen: u8) -> Option<u32> 
     Some((k >> (at.bits - plen)) + (1 << plen))
 }
 
-fn art_findex<D>(at: &ArtTable<D>, prefix: &IpNet) -> Option<u32> {
+fn art_findex<P, D>(at: &ArtTable<P, D>, prefix: &P) -> Option<u32>
+where
+    P: Prefix + Copy,
+{
     art_bindex(at, prefix, at.offset + at.bits)
 }
 
-fn art_allot<D>(at: &ArtTable<D>, i: u32, old: Rc<ArtEntry<D>>, new: &Rc<ArtEntry<D>>) {
+fn art_allot<P, D>(at: &ArtTable<P, D>, i: u32, old: Rc<ArtEntry<P, D>>, new: &Rc<ArtEntry<P, D>>) {
     let mut k = i;
 
     let exist = at.get_entry(k);
@@ -535,30 +569,30 @@ mod tests {
 
     #[test]
     pub fn test_art_bindex() {
-        let ar = ArtRoot::<u32>::new(8, [4u8; 8].to_vec(), 32);
+        let ar = ArtRoot::<Ipv4Net, u32>::new(8, [4u8; 8].to_vec(), 32);
         let at = ArtTable::new(&ar, None, 0);
 
-        let net0: IpNet = "0.0.0.0/0".parse().unwrap();
+        let net0: Ipv4Net = "0.0.0.0/0".parse().unwrap();
         let bindex = art_bindex(&at, &net0, net0.prefix_len()).unwrap();
         assert_eq!(bindex, 1);
 
-        let net0: IpNet = "0.0.0.0/1".parse().unwrap();
+        let net0: Ipv4Net = "0.0.0.0/1".parse().unwrap();
         let bindex = art_bindex(&at, &net0, net0.prefix_len()).unwrap();
         assert_eq!(bindex, 2);
 
-        let net128: IpNet = "128.0.0.0/1".parse().unwrap();
+        let net128: Ipv4Net = "128.0.0.0/1".parse().unwrap();
         let bindex = art_bindex(&at, &net128, net128.prefix_len()).unwrap();
         assert_eq!(bindex, 3);
 
-        let net128: IpNet = "128.0.0.0/4".parse().unwrap();
+        let net128: Ipv4Net = "128.0.0.0/4".parse().unwrap();
         let bindex = art_bindex(&at, &net128, net128.prefix_len()).unwrap();
         assert_eq!(bindex, 24);
 
-        let net224: IpNet = "224.0.0.0/3".parse().unwrap();
+        let net224: Ipv4Net = "224.0.0.0/3".parse().unwrap();
         let bindex = art_bindex(&at, &net224, net224.prefix_len()).unwrap();
         assert_eq!(bindex, 15);
 
-        let net240: IpNet = "240.0.0.0/4".parse().unwrap();
+        let net240: Ipv4Net = "240.0.0.0/4".parse().unwrap();
         let bindex = art_bindex(&at, &net240, net240.prefix_len()).unwrap();
         assert_eq!(bindex, 31);
     }
